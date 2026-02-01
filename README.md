@@ -264,7 +264,3 @@ Contributions are welcome — open an issue or a PR with a bugfix or a feature. 
 ## License 📄
 
 This project does not include a LICENSE file by default. Add a `LICENSE` if you want to define usage terms.
-
----
-
-If you want, I can also add a basic GitHub Actions workflow (CI) and a more detailed `README` section for deployment or Dockerization.
