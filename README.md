@@ -129,19 +129,109 @@ CREATE TABLE calculated_emissions (
 
 ## API endpoints 🧭
 
-- POST `/auth/login` — obtain JWT token
-  - body: `{ "email": "admin@company.com", "password": "admin123" }`
-  - response: `{ data: { token, user } }`
-  - Use the token in `Authorization: Bearer <token>` header for protected endpoints
+### Authentication
+- **POST `/auth/login`** — obtain JWT token
+  - **Body**: `{ "email": "admin@company.com", "password": "admin123" }`
+  - **Response**: `{ "success": true, "data": { "token": "...", "user": { "id": "...", "name": "...", "role": "..." } } }`
+  - **Note**: Use the token in `Authorization: Bearer <token>` header for all protected endpoints
 
-- GET `/projects` — list projects for the authenticated user
-- POST `/projects` — create a project (Admin/Manager)
-  - body: `{ "name": "Project A", "location": "City" }`
+### Projects
+- **GET `/projects`** — list all projects for the authenticated user
+  - **Auth**: Required (Bearer token)
+  - **Response**: `{ "success": true, "data": [ { "id": "...", "name": "Project A", "location": "...", ... } ] }`
 
-- POST `/emissions` — submit raw emission data (Admin/Manager)
-  - body: `{ "project_id": 1, "date": "2025-12-01", "scope": 1, "activity_type": "fuel", "value": 100, "unit": "liters" }`
+- **POST `/projects`** — create a new project (Admin/Manager only)
+  - **Auth**: Required (Bearer token, admin or manager role)
+  - **Body**: `{ "name": "Project A", "location": "City" }`
+  - **Response**: `{ "success": true, "data": { "id": "...", ... } }`
 
-On emission creation the service inserts the raw row and runs calculation logic to persist a result in `calculated_emissions`.
+### Emissions
+- **GET `/emissions`** — retrieve emissions data for the authenticated user's organization
+  - **Auth**: Required (Bearer token)
+  - **Query Parameters** (all optional):
+    - `project_id` — Filter by project UUID
+    - `scope` — Filter by scope value
+    - `from` — Start date (YYYY-MM-DD format)
+    - `to` — End date (YYYY-MM-DD format)
+  - **Example**: `GET /emissions?project_id=b0d796b6-0792-478b-89a1-a437da3f03cf&from=2024-01-01&to=2024-12-31`
+  - **Response**:
+    ```json
+    {
+      "success": true,
+      "data": [
+        {
+          "raw_emission_id": "...",
+          "date": "2024-02-01",
+          "scope": 1,
+          "activity_type": "electricity",
+          "value": 500,
+          "unit": "kWh",
+          "project_name": "Plant A",
+          "calculated_value": "..."
+        }
+      ]
+    }
+    ```
+
+- **POST `/emissions`** — submit raw emission data (Admin/Manager only)
+  - **Auth**: Required (Bearer token, admin or manager role)
+  - **Body**:
+    ```json
+    {
+      "project_id": "b0d796b6-0792-478b-89a1-a437da3f03cf",
+      "date": "2024-02-01",
+      "scope": 1,
+      "activity_type": "electricity",
+      "value": 500,
+      "unit": "kWh"
+    }
+    ```
+  - **Required fields**: `project_id`, `date`, `scope`, `activity_type`, `value`, `unit`
+  - **Response**: `{ "success": true, "data": { "id": "...", ... } }`
+  - **Note**: On emission creation, the service automatically calculates and persists the result in the `calculated_emissions` table
+
+---
+
+## Testing the API with Postman 📝
+
+### Step 1: Login
+1. Create a **POST** request to `http://localhost:5000/auth/login`
+2. Go to **Body** → Select **raw** → Select **JSON**
+3. Paste:
+   ```json
+   {
+     "email": "admin@company.com",
+     "password": "admin123"
+   }
+   ```
+4. Click **Send**
+5. Copy the `token` from the response
+
+### Step 2: Test GET /emissions
+1. Create a **GET** request to `http://localhost:5000/emissions`
+2. Go to **Authorization** tab → Select "Bearer Token" → Paste your token
+3. Click **Send**
+4. You should see all emissions for your organization
+
+### Step 3: Test POST /emissions
+1. First, get a valid project ID: **GET** `/projects` with your token
+2. Copy a project's UUID
+3. Create a **POST** request to `http://localhost:5000/emissions`
+4. Go to **Authorization** → Paste your token
+5. Go to **Body** → Select **raw** → Select **JSON**
+6. Paste (replace project_id with your actual UUID):
+   ```json
+   {
+     "project_id": "b0d796b6-0792-478b-89a1-a437da3f03cf",
+     "date": "2024-02-01",
+     "scope": 1,
+     "activity_type": "electricity",
+     "value": 500,
+     "unit": "kWh"
+   }
+   ```
+7. Click **Send**
+8. You should get a 201 response with the created emission
 
 ---
 
