@@ -10,7 +10,12 @@ A lightweight backend API for tracking projects and calculating emissions. This 
 - [Environment](#environment)
 - [Database setup](#database-setup)
 - [API endpoints](#api-endpoints)
+- [CSV upload](#csv-upload)
+- [Reports](#reports)
+- [Dashboard](#dashboard)
+- [Recalculate emissions](#recalculate-emissions)
 - [Seeding](#seeding)
+- [Emission factors import](#emission-factors-import)
 - [Development](#development)
 - [Contributing](#contributing)
 - [License](#license)
@@ -95,6 +100,7 @@ CREATE TABLE emission_factors (
   activity_type TEXT NOT NULL,
   unit TEXT NOT NULL,
   factor_value NUMERIC NOT NULL,
+  factor_unit TEXT,
   valid_from DATE NOT NULL,
   valid_to DATE
 );
@@ -105,11 +111,12 @@ CREATE TABLE raw_emission_data (
   organization_id INT REFERENCES organizations(id),
   project_id INT REFERENCES projects(id),
   date DATE NOT NULL,
-  scope INT NOT NULL,
+  scope TEXT NOT NULL,
   activity_type TEXT NOT NULL,
   value NUMERIC NOT NULL,
   unit TEXT NOT NULL,
-  created_by INT
+  created_by INT,
+  source TEXT
 );
 
 -- calculated emissions
@@ -118,9 +125,20 @@ CREATE TABLE calculated_emissions (
   organization_id INT REFERENCES organizations(id),
   project_id INT REFERENCES projects(id),
   raw_emission_id INT REFERENCES raw_emission_data(id),
-  scope INT,
+  scope TEXT,
   calculated_value NUMERIC NOT NULL,
   calculation_version INT,
+  created_at TIMESTAMP DEFAULT now()
+);
+
+-- reports
+CREATE TABLE reports (
+  id SERIAL PRIMARY KEY,
+  organization_id INT REFERENCES organizations(id),
+  type TEXT NOT NULL,
+  filters JSONB,
+  file_path TEXT NOT NULL,
+  generated_by INT REFERENCES users(id),
   created_at TIMESTAMP DEFAULT now()
 );
 ```
@@ -149,11 +167,11 @@ CREATE TABLE calculated_emissions (
 - **GET `/emissions`** — retrieve emissions data for the authenticated user's organization
   - **Auth**: Required (Bearer token)
   - **Query Parameters** (all optional):
-    - `project_id` — Filter by project UUID
-    - `scope` — Filter by scope value
+    - `project_id` — Filter by project ID
+    - `scope` — Filter by scope value (`scope_1`, `scope_2`, `scope_3`)
     - `from` — Start date (YYYY-MM-DD format)
     - `to` — End date (YYYY-MM-DD format)
-  - **Example**: `GET /emissions?project_id=b0d796b6-0792-478b-89a1-a437da3f03cf&from=2024-01-01&to=2024-12-31`
+  - **Example**: `GET /emissions?project_id=1&scope=scope_2&from=2024-01-01&to=2024-12-31`
   - **Response**:
     ```json
     {
@@ -162,7 +180,7 @@ CREATE TABLE calculated_emissions (
         {
           "raw_emission_id": "...",
           "date": "2024-02-01",
-          "scope": 1,
+          "scope": "scope_1",
           "activity_type": "electricity",
           "value": 500,
           "unit": "kWh",
@@ -178,9 +196,9 @@ CREATE TABLE calculated_emissions (
   - **Body**:
     ```json
     {
-      "project_id": "b0d796b6-0792-478b-89a1-a437da3f03cf",
+      "project_id": 1,
       "date": "2024-02-01",
-      "scope": 1,
+      "scope": "scope_1",
       "activity_type": "electricity",
       "value": 500,
       "unit": "kWh"
@@ -189,6 +207,78 @@ CREATE TABLE calculated_emissions (
   - **Required fields**: `project_id`, `date`, `scope`, `activity_type`, `value`, `unit`
   - **Response**: `{ "success": true, "data": { "id": "...", ... } }`
   - **Note**: On emission creation, the service automatically calculates and persists the result in the `calculated_emissions` table
+
+---
+
+## CSV upload 📤
+
+- **POST `/upload/emissions`** — bulk upload emissions from CSV (Admin/Manager only)
+  - **Auth**: Required (Bearer token, admin or manager role)
+  - **Content-Type**: `multipart/form-data`
+  - **File field name**: `file`
+  - **CSV headers required**: `project_id,date,scope,activity_type,value,unit`
+  - **Scope values**: `scope_1`, `scope_2`, `scope_3`
+  - **Response**:
+    ```json
+    {
+      "success": true,
+      "data": { "inserted": 10, "failed": 2, "errors": [ ... ] }
+    }
+    ```
+
+---
+
+## Reports 🧾
+
+- **POST `/reports/csv`** — generate and download a CSV report (Admin/Manager only)
+- **POST `/reports/pdf`** — generate and download a PDF report (Admin/Manager only)
+  - **Auth**: Required (Bearer token, admin or manager role)
+  - **Body** (all optional filters):
+    ```json
+    {
+      "project_id": 1,
+      "scope": "scope_2",
+      "from": "2024-01-01",
+      "to": "2024-12-31"
+    }
+    ```
+  - **Response**: File download
+
+---
+
+## Dashboard 📊
+
+- **GET `/dashboard/summary`** — KPI totals by scope
+- **GET `/dashboard/scope-breakdown`** — scope totals for pie/donut charts
+- **GET `/dashboard/trends`** — monthly trend (optional query params: `project_id`, `scope`)
+  - **Auth**: Required (Bearer token)
+
+---
+
+## Recalculate emissions 🔄
+
+- **POST `/recalculate/emissions`** — re-run emission calculations using the latest calculation version (Admin only)
+  - **Auth**: Required (Bearer token, admin role)
+  - **Body** (all optional filters):
+    ```json
+    {
+      "project_id": 1,
+      "from": "2024-01-01",
+      "to": "2024-12-31"
+    }
+    ```
+  - **Response**:
+    ```json
+    {
+      "success": true,
+      "data": {
+        "total_raw_records": 120,
+        "recalculated": 40,
+        "skipped": 80,
+        "version": 2
+      }
+    }
+    ```
 
 ---
 
@@ -219,12 +309,12 @@ CREATE TABLE calculated_emissions (
 3. Create a **POST** request to `http://localhost:5000/emissions`
 4. Go to **Authorization** → Paste your token
 5. Go to **Body** → Select **raw** → Select **JSON**
-6. Paste (replace project_id with your actual UUID):
+3. Paste (replace project_id with your actual ID):
    ```json
    {
-     "project_id": "b0d796b6-0792-478b-89a1-a437da3f03cf",
+     "project_id": 1,
      "date": "2024-02-01",
-     "scope": 1,
+     "scope": "scope_1",
      "activity_type": "electricity",
      "value": 500,
      "unit": "kWh"
@@ -244,6 +334,19 @@ npm run seed
 ```
 
 This script inserts an organization and an admin user (`admin@company.com` / `admin123`). Ensure your DB tables exist before running it.
+
+---
+
+## Emission factors import ♻️
+
+To load emission factors from a CSV file:
+
+```bash
+node scripts/importEmissionFactors.js
+```
+
+The script expects an `emission_factors.csv` file in the backend root with columns:
+`activity_type,unit,factor_value,factor_unit,valid_from`.
 
 ---
 
