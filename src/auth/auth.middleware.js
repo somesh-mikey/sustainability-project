@@ -1,33 +1,28 @@
 import jwt from "jsonwebtoken";
+import { AppError } from "../middleware/errorHandler.js";
 
 export function requireAuth(req, res, next) {
   const header = req.headers.authorization;
 
   if (!header) {
-    console.log('❌ No authorization header');
-    return res.status(401).json({ error: "Missing token" });
+    throw new AppError("Missing token", 401, "MISSING_TOKEN");
   }
 
   const token = header.split(" ")[1];
 
   try {
-    console.log('🔐 Verifying token...');
     req.user = jwt.verify(token, process.env.JWT_SECRET);
-    console.log('✅ Token verified:', req.user);
     next();
   } catch (err) {
-    console.error('❌ Token verification failed:', err.message);
-    return res.status(401).json({ error: "Invalid token" });
+    throw new AppError("Invalid or expired token", 401, "INVALID_TOKEN");
   }
 }
 
 export function requireRole(...roles) {
   return (req, res, next) => {
     if (!roles.includes(req.user.role)) {
-      console.log('❌ User role not authorized. User role:', req.user.role, 'Required:', roles);
-      return res.status(403).json({ error: "Forbidden" });
+      throw new AppError("Forbidden: insufficient role", 403, "FORBIDDEN");
     }
-    console.log('✅ User role authorized:', req.user.role);
     next();
   };
 }

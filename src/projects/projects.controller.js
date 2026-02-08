@@ -1,4 +1,5 @@
 import db from "../db.js";
+import { AppError } from "../middleware/errorHandler.js";
 
 /**
  * GET /projects
@@ -30,10 +31,7 @@ export async function createProject(req, res) {
   const { name, location } = req.body;
 
   if (!name) {
-    return res.status(400).json({
-      success: false,
-      error: { message: "Project name is required" },
-    });
+    throw new AppError("Project name is required", 400, "VALIDATION_ERROR");
   }
 
   const result = await db.query(

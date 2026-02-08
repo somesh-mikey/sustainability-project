@@ -1,0 +1,1 @@
+export const CURRENT_CALCULATION_VERSION = 2;
