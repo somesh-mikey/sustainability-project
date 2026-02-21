@@ -143,6 +143,19 @@ CREATE TABLE reports (
 );
 ```
 
+### Additional PRD screen tables
+
+To support the newly added screens (API Integrations, Data Requests, Talk With Your Team), run:
+
+```bash
+psql -U postgres -d sustainability_db -f migrations/20260222_add_prd_screen_tables.sql
+```
+
+This migration creates:
+- `integrations`
+- `data_requests`
+- `messages`
+
 ---
 
 ## API endpoints 🧭

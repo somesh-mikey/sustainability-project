@@ -91,3 +91,67 @@ export async function getMonthlyTrends(req, res) {
     data: result.rows
   });
 }
+
+/**
+ * GET /dashboard/overview
+ * Home overview cards + pending actions
+ */
+export async function getDashboardOverview(req, res) {
+  const orgId = req.user.organization_id;
+
+  const safeCountQuery = async (query, params) => {
+    try {
+      const result = await db.query(query, params);
+      return result.rows[0]?.total || 0;
+    } catch {
+      return 0;
+    }
+  };
+
+  const totalProjects = await safeCountQuery(
+    `SELECT COUNT(*)::int AS total FROM projects WHERE organization_id = $1`,
+    [orgId]
+  );
+
+  const projectsWithData = await safeCountQuery(
+    `
+    SELECT COUNT(DISTINCT project_id)::int AS total
+    FROM raw_emission_data
+    WHERE organization_id = $1
+    `,
+    [orgId]
+  );
+
+  const pendingDataRequests = await safeCountQuery(
+    `
+    SELECT COUNT(*)::int AS total
+    FROM data_requests
+    WHERE organization_id = $1 AND status = 'pending'
+    `,
+    [orgId]
+  );
+
+  const readyReports = await safeCountQuery(
+    `
+    SELECT COUNT(*)::int AS total
+    FROM reports
+    WHERE organization_id = $1
+    `,
+    [orgId]
+  );
+
+  const dataCompleteness = totalProjects > 0
+    ? Math.round((projectsWithData / totalProjects) * 100)
+    : 0;
+
+  res.json({
+    success: true,
+    data: {
+      data_completeness: dataCompleteness,
+      carbon_assessment_status: projectsWithData > 0 ? "in_progress" : "not_started",
+      net_zero_status: projectsWithData > 0 ? "tracking" : "needs_data",
+      pending_data_requests: pendingDataRequests,
+      ready_reports: readyReports
+    }
+  });
+}

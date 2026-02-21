@@ -3,6 +3,7 @@ import path from "path";
 import { Parser } from "json2csv";
 import PDFDocument from "pdfkit";
 import db from "../db.js";
+import { AppError } from "../middleware/errorHandler.js";
 
 const REPORTS_DIR = "reports";
 
@@ -55,6 +56,60 @@ async function fetchReportData(orgId, filters) {
 
   const result = await db.query(query, params);
   return result.rows;
+}
+
+/**
+ * GET /reports
+ */
+export async function getReports(req, res) {
+  const orgId = req.user.organization_id;
+
+  const result = await db.query(
+    `
+    SELECT id, type, filters, file_path, created_at
+    FROM reports
+    WHERE organization_id = $1
+    ORDER BY created_at DESC
+    `,
+    [orgId]
+  );
+
+  const rows = result.rows.map((report) => ({
+    ...report,
+    file_name: path.basename(report.file_path)
+  }));
+
+  res.json({
+    success: true,
+    data: rows
+  });
+}
+
+/**
+ * GET /reports/:id/download
+ */
+export async function downloadReport(req, res) {
+  const orgId = req.user.organization_id;
+  const { id } = req.params;
+
+  const report = await db.oneOrNone(
+    `
+    SELECT id, file_path
+    FROM reports
+    WHERE id = $1 AND organization_id = $2
+    `,
+    [id, orgId]
+  );
+
+  if (!report) {
+    throw new AppError("Report not found", 404, "NOT_FOUND");
+  }
+
+  if (!fs.existsSync(report.file_path)) {
+    throw new AppError("Report file not found on disk", 404, "FILE_NOT_FOUND");
+  }
+
+  res.download(report.file_path);
 }
 
 /**

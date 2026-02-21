@@ -8,6 +8,11 @@ import dashboardRoutes from "./dashboard/dashboard.routes.js";
 import uploadRoutes from "./uploads/emissionUpload.routes.js";
 import recalcRoutes from "./recalculate/recalculate.routes.js";
 import reportsRoutes from "./reports/reports.routes.js";
+import integrationsRoutes from "./integrations/integrations.routes.js";
+import dataRequestsRoutes from "./dataRequests/dataRequests.routes.js";
+import messagesRoutes from "./messages/messages.routes.js";
+import templatesRoutes from "./templates/templates.routes.js";
+import profileRoutes from "./profile/profile.routes.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 
 dotenv.config();
@@ -33,6 +38,11 @@ app.use("/dashboard", dashboardRoutes);
 app.use("/upload", uploadRoutes);
 app.use("/recalculate", recalcRoutes);
 app.use("/reports", reportsRoutes);
+app.use("/integrations", integrationsRoutes);
+app.use("/data-requests", dataRequestsRoutes);
+app.use("/messages", messagesRoutes);
+app.use("/templates", templatesRoutes);
+app.use("/profile", profileRoutes);
 
 // 404 catch-all — no HTML responses
 app.use((req, res) => {
