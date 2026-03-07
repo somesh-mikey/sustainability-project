@@ -25,16 +25,12 @@ services:
       - key: JWT_SECRET
         generateValue: true
       - key: FRONTEND_URL
-        fromService:
-          type: web
-          name: sustainability-frontend
-          property: host
+        value: https://sustainability-frontend.onrender.com
     healthCheckPath: /
 
   # ── Frontend (Static Site) ──
-  - type: web
+  - type: static_site
     name: sustainability-frontend
-    runtime: static
     plan: free
     buildCommand: cd frontend && npm install && npm run build
     staticPublishPath: frontend/dist
