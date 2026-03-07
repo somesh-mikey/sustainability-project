@@ -1,4 +1,4 @@
-# Render Blueprint — deploys backend + frontend + PostgreSQL
+# Render Blueprint — deploys full-stack app (backend + frontend) + PostgreSQL
 # https://render.com/docs/blueprint-spec
 
 databases:
@@ -8,12 +8,11 @@ databases:
     user: sustainability_user
 
 services:
-  # ── Backend API ──
   - type: web
-    name: sustainability-api
+    name: sustainability-app
     runtime: node
     plan: free
-    buildCommand: npm install && npm run migrate && npm run seed
+    buildCommand: npm install && cd frontend && npm install && npm run build && cd .. && npm run migrate && npm run seed
     startCommand: npm start
     envVars:
       - key: NODE_ENV
@@ -24,27 +23,6 @@ services:
           property: connectionString
       - key: JWT_SECRET
         generateValue: true
-      - key: FRONTEND_URL
-        value: https://sustainability-frontend.onrender.com
-    healthCheckPath: /
-
-  # ── Frontend (Static Site) ──
-  - type: static_site
-    name: sustainability-frontend
-    plan: free
-    buildCommand: cd frontend && npm install && npm run build
-    staticPublishPath: frontend/dist
-    headers:
-      - path: /*
-        name: Cache-Control
-        value: public, max-age=0, must-revalidate
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
-    envVars:
-      - key: VITE_API_BASE_URL
-        fromService:
-          type: web
-          name: sustainability-api
-          property: host
+      - key: PORT
+        value: 3000
+    healthCheckPath: /auth/login

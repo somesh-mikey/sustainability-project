@@ -1,10 +1,7 @@
-const API_URL = import.meta.env.VITE_API_BASE_URL;
+// Use VITE_API_BASE_URL if set (for local dev), otherwise use current origin (for production)
+const API_URL = import.meta.env.VITE_API_BASE_URL || "";
 
 export async function loginUser(email, password) {
-  if (!API_URL) {
-    throw new Error("Missing VITE_API_BASE_URL in frontend/.env");
-  }
-
   const res = await fetch(`${API_URL}/auth/login`, {
     method: "POST",
     headers: {

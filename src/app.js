@@ -1,6 +1,8 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
 import { login } from "./auth/auth.controller.js";
 import projectsRoutes from "./projects/projects.routes.js";
 import emissionsRoutes from "./emissions/emissions.routes.js";
@@ -16,6 +18,9 @@ import profileRoutes from "./profile/profile.routes.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 
 dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 
@@ -37,6 +42,10 @@ app.use((req, res, next) => {
   next();
 });
 
+// Serve frontend static files (in production)
+const frontendDist = path.join(__dirname, "../frontend/dist");
+app.use(express.static(frontendDist));
+
 // Routes
 app.post("/auth/login", login);
 app.use("/projects", projectsRoutes);
@@ -51,13 +60,30 @@ app.use("/messages", messagesRoutes);
 app.use("/templates", templatesRoutes);
 app.use("/profile", profileRoutes);
 
-// 404 catch-all — no HTML responses
-app.use((req, res) => {
-  res.status(404).json({
-    success: false,
-    error: {
-      code: "NOT_FOUND",
-      message: `Route ${req.method} ${req.path} not found`
+// Serve index.html for client-side routing (must be after all API routes)
+app.use((req, res, next) => {
+  // List of API path prefixes
+  const apiPaths = [
+    "/auth", "/dashboard", "/data-", "/emissions", "/projects",
+    "/reports", "/upload", "/integrations", "/messages",
+    "/templates", "/profile", "/recalculate"
+  ];
+  
+  // If path starts with any API prefix, let Express handle the 404
+  if (apiPaths.some(prefix => req.path.startsWith(prefix))) {
+    return res.status(404).json({
+      success: false,
+      error: { code: "NOT_FOUND", message: `Route ${req.method} ${req.path} not found` }
+    });
+  }
+  
+  // Otherwise serve index.html for SPA routing
+  res.sendFile(path.join(frontendDist, "index.html"), (err) => {
+    if (err) {
+      res.status(404).json({
+        success: false,
+        error: { code: "NOT_FOUND", message: "Not found" }
+      });
     }
   });
 });
