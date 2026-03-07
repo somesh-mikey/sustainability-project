@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login";
 import DashboardLayout from "./layout/DashboardLayout";
+import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
 import Emissions from "./pages/Emissions";
 import Projects from "./pages/Projects";
@@ -25,7 +26,7 @@ export default function App() {
           </ProtectedRoute>
         }
       >
-        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/dashboard" element={<Home />} />
         <Route path="/dashboards" element={<Dashboard />} />
         <Route path="/data-submission" element={<DataSubmission />} />
         <Route path="/api-integrations" element={<APIIntegrations />} />

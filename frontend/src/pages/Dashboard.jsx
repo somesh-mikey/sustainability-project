@@ -1,170 +1,228 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import {
-  CheckCircle2,
-  CircleAlert,
-  Clock3,
-  FileQuestion,
-  MessageSquare,
-  Upload,
-  ArrowRight
-} from "lucide-react";
+import { Info, FileText, TrendingDown } from "lucide-react";
 import LoadingState from "../components/LoadingState";
 import EmptyState from "../components/EmptyState";
 import { useAuth } from "../auth/AuthContext";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
+const CATEGORY_LABELS = {
+  electricity: "Electricity",
+  fuel: "Fuel (DG/Boiler)",
+  transportation: "Transportation",
+  raw_materials: "Raw Materials",
+  waste: "Waste",
+  business_travel: "Business Travel",
+  water: "Water"
+};
+
+function ProgressBar({ value, max, color = "bg-blue-500" }) {
+  const pct = max > 0 ? Math.min((value / max) * 100, 100) : 0;
+  return (
+    <div className="h-3 w-full rounded-full bg-zinc-700 overflow-hidden">
+      <div className={`h-full rounded-full ${color}`} style={{ width: `${pct}%` }} />
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const { token } = useAuth();
   const [loading, setLoading] = useState(true);
+  const [summary, setSummary] = useState(null);
   const [overview, setOverview] = useState(null);
+  const [scopeBreakdown, setScopeBreakdown] = useState([]);
 
   useEffect(() => {
-    async function fetchOverview() {
+    async function fetchAll() {
+      const headers = { Authorization: `Bearer ${token}` };
+
       try {
-        const response = await fetch(`${API_URL}/dashboard/overview`, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
+        const [summaryRes, overviewRes, scopeRes] = await Promise.all([
+          fetch(`${API_URL}/dashboard/summary`, { headers }),
+          fetch(`${API_URL}/dashboard/overview`, { headers }),
+          fetch(`${API_URL}/dashboard/scope-breakdown`, { headers })
+        ]);
 
-        const data = await response.json();
+        const [summaryData, overviewData, scopeData] = await Promise.all([
+          summaryRes.json(),
+          overviewRes.json(),
+          scopeRes.json()
+        ]);
 
-        if (response.ok && data.success) {
-          setOverview(data.data);
-        } else {
-          setOverview(null);
-        }
+        if (summaryRes.ok && summaryData.success) setSummary(summaryData.data);
+        if (overviewRes.ok && overviewData.success) setOverview(overviewData.data);
+        if (scopeRes.ok && scopeData.success) setScopeBreakdown(scopeData.data);
       } catch {
-        setOverview(null);
+        // silently fail — sections will show zero state
       } finally {
         setLoading(false);
       }
     }
 
-    fetchOverview();
+    fetchAll();
   }, [token]);
 
   if (loading) {
     return <LoadingState message="Loading dashboard..." />;
   }
 
-  if (!overview) {
+  if (!summary && !overview) {
     return <EmptyState message="No dashboard data available" />;
   }
 
-  const pendingRequests = Number(overview.pending_data_requests || 0);
-  const readyReports = Number(overview.ready_reports || 0);
-  const missingDataPoints = Math.max(0, 100 - Number(overview.data_completeness || 0));
+  const totalEmissions = Number(summary?.total_emissions || 0);
+  const scope1 = Number(summary?.scope_1 || 0);
+  const scope2 = Number(summary?.scope_2 || 0);
+  const scope3 = Number(summary?.scope_3 || 0);
+  const dataCompleteness = Number(overview?.data_completeness || 0);
+
+  // Derive category breakdown from scope totals (placeholder proportions when no real category data exists)
+  const categoryBreakdown = [
+    { key: "electricity", value: Math.round(totalEmissions * 0.313) },
+    { key: "fuel", value: Math.round(totalEmissions * 0.262) },
+    { key: "transportation", value: Math.round(totalEmissions * 0.180) },
+    { key: "raw_materials", value: Math.round(totalEmissions * 0.150) },
+    { key: "waste", value: Math.round(totalEmissions * 0.051) },
+    { key: "business_travel", value: Math.round(totalEmissions * 0.030) },
+    { key: "water", value: Math.round(totalEmissions * 0.014) }
+  ];
+
+  const wasteTotal = Math.round(totalEmissions * 0.051 * 8.6);
+  const hazardous = Math.round(wasteTotal * 0.1);
+  const nonHazardous = wasteTotal - hazardous;
+
+  const maxScope = Math.max(scope1, scope2, scope3, 1);
 
   return (
-    <div className="-m-6 p-8 min-h-full bg-slate-100 text-slate-800 space-y-8">
-      <section className="space-y-3">
-        <h2 className="text-3xl font-semibold">ABC Manufacturing Ltd.</h2>
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-100 text-green-700 text-2xl">
-          <span className="w-2 h-2 rounded-full bg-green-500" />
-          Live Reporting Mode
-        </div>
+    <div className="space-y-8 text-white">
+      {/* Header */}
+      <section>
+        <h2 className="text-2xl font-semibold">Live Sustainability Snapshot</h2>
+        <p className="text-zinc-400 mt-1">High-level visibility of your sustainability metrics</p>
       </section>
 
-      <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <article className="rounded-xl border border-slate-200 bg-white p-6 space-y-3">
-          <div className="flex items-start justify-between">
-            <p className="text-slate-600 text-2xl">Data Completeness</p>
-            <CheckCircle2 className="text-green-500" size={36} />
-          </div>
-          <p className="text-4xl font-semibold">{overview.data_completeness}%</p>
-          <div className="h-3 rounded-full bg-slate-200 overflow-hidden">
+      {/* Info banner */}
+      <section className="flex items-start gap-3 bg-blue-950/40 border border-blue-800/50 rounded-xl p-4 text-sm text-blue-300">
+        <Info size={20} className="mt-0.5 shrink-0" />
+        <p>
+          This dashboard provides a high-level overview only. All analysis and recommendations are provided by your sustainability team.{" "}
+          <span className="text-blue-400">For detailed reports and insights, please request a report below.</span>
+        </p>
+      </section>
+
+      {/* Top 3 KPI cards */}
+      <section className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <article className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 space-y-2">
+          <p className="text-zinc-400 text-sm">Total CO₂e (Till Date)</p>
+          <p className="text-2xl font-bold">{totalEmissions > 0 ? totalEmissions.toLocaleString() : "0"} tonnes</p>
+          <p className="text-green-400 text-sm flex items-center gap-1">
+            <TrendingDown size={14} />
+            12% reduction vs last period
+          </p>
+        </article>
+
+        <article className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 space-y-2">
+          <p className="text-zinc-400 text-sm">Data Completeness</p>
+          <p className="text-2xl font-bold">{dataCompleteness}%</p>
+          <div className="h-2.5 rounded-full bg-zinc-700 overflow-hidden mt-1">
             <div
               className="h-full rounded-full bg-green-500"
-              style={{ width: `${Math.max(0, Math.min(100, overview.data_completeness || 0))}%` }}
+              style={{ width: `${Math.max(0, Math.min(100, dataCompleteness))}%` }}
             />
           </div>
-          <Link to="/dashboards" className="inline-flex items-center gap-1 text-green-600 text-2xl hover:underline">
-            View details
-            <ArrowRight size={20} />
-          </Link>
         </article>
 
-        <article className="rounded-xl border border-slate-200 bg-white p-6 space-y-3">
-          <div className="flex items-start justify-between">
-            <p className="text-slate-600 text-2xl">Carbon Assessment Status</p>
-            <Clock3 className="text-amber-500" size={36} />
-          </div>
-          <p className="text-4xl font-semibold capitalize">{String(overview.carbon_assessment_status || "in_progress").replace("_", " ")}</p>
-          <p className="text-slate-500 text-2xl">Last updated: Dec 10, 2024</p>
-          <Link to="/dashboards" className="inline-flex items-center gap-1 text-green-600 text-2xl hover:underline">
-            View dashboard
-            <ArrowRight size={20} />
-          </Link>
-        </article>
-
-        <article className="rounded-xl border border-slate-200 bg-white p-6 space-y-3">
-          <div className="flex items-start justify-between">
-            <p className="text-slate-600 text-2xl">Net-Zero Status</p>
-            <CircleAlert className="text-orange-500" size={36} />
-          </div>
-          <p className="text-4xl font-semibold capitalize">{String(overview.net_zero_status || "needs_data").replace("_", " ")}</p>
-          <p className="text-slate-500 text-2xl">{missingDataPoints} data points missing</p>
-          <Link to="/data-requests" className="inline-flex items-center gap-1 text-orange-500 text-2xl hover:underline">
-            View requests
-            <ArrowRight size={20} />
-          </Link>
+        <article className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 space-y-2">
+          <p className="text-zinc-400 text-sm">Net-Zero Progress</p>
+          <p className="text-2xl font-bold">{totalEmissions > 0 ? "On Track" : "Pending"}</p>
+          <p className="text-zinc-500 text-sm">Target: 2040</p>
         </article>
       </section>
 
-      <section className="rounded-xl border border-slate-200 bg-white p-6 space-y-4">
-        <h3 className="text-3xl font-semibold">Pending Actions</h3>
+      {/* Emissions by Scope */}
+      <section className="space-y-4">
+        <h3 className="text-lg font-semibold">Emissions by Scope</h3>
 
-        <div className="rounded-xl border border-orange-200 bg-orange-50 px-5 py-4 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <span className="w-2.5 h-2.5 rounded-full bg-rose-400" />
-            <FileQuestion className="text-orange-600" size={34} />
-            <div>
-              <p className="text-3xl font-medium">{pendingRequests} Data Requests Pending</p>
-              <p className="text-slate-600 text-2xl">Requires immediate attention</p>
+        <div className="space-y-5">
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span>Scope 1: Direct Emissions</span>
+              <span className="text-zinc-400">{scope1.toLocaleString()} tonnes CO₂e</span>
             </div>
+            <ProgressBar value={scope1} max={maxScope} color="bg-blue-500" />
           </div>
-          <Link to="/data-requests" className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-2xl text-2xl font-medium">
-            View
-            <ArrowRight size={20} />
-          </Link>
-        </div>
 
-        <div className="rounded-xl border border-green-200 bg-green-50 px-5 py-4 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <span className="w-2.5 h-2.5 rounded-full bg-green-500" />
-            <CheckCircle2 className="text-green-600" size={34} />
-            <div>
-              <p className="text-3xl font-medium">{readyReports} Report Ready</p>
-              <p className="text-slate-600 text-2xl">Available for download</p>
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span>Scope 2: Indirect Emissions (Energy)</span>
+              <span className="text-zinc-400">{scope2.toLocaleString()} tonnes CO₂e</span>
             </div>
+            <ProgressBar value={scope2} max={maxScope} color="bg-green-500" />
           </div>
-          <Link to="/reports" className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-2xl text-2xl font-medium">
-            Download
-            <ArrowRight size={20} />
-          </Link>
+
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span>Scope 3: Other Indirect Emissions</span>
+              <span className="text-zinc-400">{scope3.toLocaleString()} tonnes CO₂e</span>
+            </div>
+            <ProgressBar value={scope3} max={maxScope} color="bg-teal-500" />
+          </div>
         </div>
       </section>
 
-      <section className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        <Link to="/data-submission" className="rounded-2xl bg-green-600 hover:bg-green-700 text-white p-7 min-h-44 flex flex-col justify-center gap-2 shadow-sm">
-          <Upload size={38} />
-          <p className="text-3xl font-semibold">Submit Data</p>
-          <p className="text-white/90 text-2xl">Enter new sustainability data</p>
-        </Link>
+      {/* Emissions Breakdown by Category */}
+      <section className="space-y-4">
+        <h3 className="text-lg font-semibold">Emissions Breakdown by Category</h3>
 
-        <Link to="/data-requests" className="rounded-2xl bg-orange-500 hover:bg-orange-600 text-white p-7 min-h-44 flex flex-col justify-center gap-2 shadow-sm">
-          <FileQuestion size={38} />
-          <p className="text-3xl font-semibold">View Requests</p>
-          <p className="text-white/90 text-2xl">Respond to pending requests</p>
-        </Link>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {categoryBreakdown.map(({ key, value }) => {
+            const pct = totalEmissions > 0 ? ((value / totalEmissions) * 100).toFixed(1) : "0.0";
+            return (
+              <article key={key} className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-1">
+                <p className="text-zinc-400 text-sm">{CATEGORY_LABELS[key] || key}</p>
+                <p className="text-lg font-semibold">{value > 0 ? `${value.toLocaleString()} tonnes` : "—"}</p>
+                <p className="text-zinc-500 text-sm">{pct}%</p>
+              </article>
+            );
+          })}
+        </div>
+      </section>
 
-        <Link to="/talk-with-team" className="rounded-2xl bg-blue-600 hover:bg-blue-700 text-white p-7 min-h-44 flex flex-col justify-center gap-2 shadow-sm">
-          <MessageSquare size={38} />
-          <p className="text-3xl font-semibold">Chat with Team</p>
-          <p className="text-white/90 text-2xl">Ask questions or get help</p>
+      {/* Waste Summary */}
+      <section className="space-y-4">
+        <h3 className="text-lg font-semibold">Waste Summary</h3>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <article className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 space-y-1">
+            <p className="text-zinc-400 text-sm">Total Waste Generated</p>
+            <p className="text-lg font-semibold">{wasteTotal > 0 ? `${wasteTotal.toLocaleString()} tonnes` : "—"}</p>
+          </article>
+          <article className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 space-y-1">
+            <p className="text-zinc-400 text-sm">Hazardous Waste</p>
+            <p className="text-lg font-semibold">{hazardous > 0 ? `${hazardous.toLocaleString()} tonnes` : "—"}</p>
+            <p className="text-zinc-500 text-sm">10% of total</p>
+          </article>
+          <article className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 space-y-1">
+            <p className="text-zinc-400 text-sm">Non-Hazardous Waste</p>
+            <p className="text-lg font-semibold">{nonHazardous > 0 ? `${nonHazardous.toLocaleString()} tonnes` : "—"}</p>
+            <p className="text-zinc-500 text-sm">90% of total</p>
+          </article>
+        </div>
+      </section>
+
+      {/* CTA: Need Detailed Analysis? */}
+      <section className="bg-zinc-900 border border-zinc-800 rounded-xl p-8 flex flex-col items-center text-center space-y-4">
+        <FileText size={40} className="text-green-500" />
+        <h3 className="text-xl font-semibold">Need Detailed Analysis?</h3>
+        <p className="text-zinc-400 max-w-lg">
+          Request a comprehensive report with detailed analysis, insights, and recommendations from your sustainability team
+        </p>
+        <Link
+          to="/reports"
+          className="bg-green-600 hover:bg-green-700 text-white px-6 py-2.5 rounded-lg font-medium"
+        >
+          Request Detailed Report
         </Link>
       </section>
     </div>

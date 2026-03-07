@@ -22,16 +22,16 @@ export default function Header() {
 	const title = routeTitles[pathname] || "Sustainability Platform";
 
 	return (
-		<header className="border-b border-slate-200 bg-white px-6 md:px-8 py-4 flex items-center justify-between">
+		<header className="border-b border-zinc-800 bg-zinc-900 px-6 md:px-8 py-4 flex items-center justify-between">
 			<div>
-				<h1 className="text-xl font-semibold text-slate-800">{title}</h1>
+				<h1 className="text-xl font-semibold text-white">{title}</h1>
 			</div>
 
 			<div className="flex items-center gap-3">
-				<span className="text-sm text-slate-600">{user?.name || "User"}</span>
+				<span className="text-sm text-zinc-400">{user?.name || "User"}</span>
 				<button
 					onClick={logout}
-					className="bg-slate-800 hover:bg-slate-900 text-white text-sm px-3 py-1.5 rounded-lg"
+					className="bg-zinc-700 hover:bg-zinc-600 text-white text-sm px-3 py-1.5 rounded-lg"
 				>
 					Logout
 				</button>
