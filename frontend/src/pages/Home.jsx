@@ -16,7 +16,7 @@ import { useAuth } from "../auth/AuthContext";
 const API_URL = import.meta.env.VITE_API_BASE_URL || "";
 
 export default function Home() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [overview, setOverview] = useState(null);
 
@@ -60,10 +60,10 @@ export default function Home() {
     <div className="space-y-6 text-white">
       {/* Company header */}
       <section className="space-y-2">
-        <h2 className="text-2xl font-semibold">ABC Manufacturing Ltd.</h2>
+        <h2 className="text-2xl font-semibold">{user?.organization_name || "Your Organization"}</h2>
         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-900/40 text-green-400 text-sm font-medium">
           <span className="w-2 h-2 rounded-full bg-green-500" />
-          Live Reporting Mode
+          Active
         </div>
       </section>
 
@@ -97,7 +97,7 @@ export default function Home() {
           <p className="text-3xl font-bold capitalize">
             {String(overview.carbon_assessment_status || "not_started").replace(/_/g, " ")}
           </p>
-          <p className="text-zinc-500 text-sm">Last updated: Dec 10, 2024</p>
+          <p className="text-zinc-500 text-sm">Based on current data</p>
           <Link to="/dashboards" className="inline-flex items-center gap-1 text-green-400 text-sm hover:underline">
             View dashboard
             <ArrowRight size={14} />
@@ -135,7 +135,7 @@ export default function Home() {
             </div>
           </div>
           <Link
-            to="/data-requests"
+            to="/company/data-requests"
             className="inline-flex items-center gap-1.5 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium"
           >
             View
@@ -153,7 +153,7 @@ export default function Home() {
             </div>
           </div>
           <Link
-            to="/reports"
+            to="/company/reports"
             className="inline-flex items-center gap-1.5 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
           >
             Download
@@ -165,7 +165,7 @@ export default function Home() {
       {/* 3 Quick action cards */}
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <Link
-          to="/data-submission"
+          to="/company/data-submission"
           className="rounded-xl bg-green-600 hover:bg-green-700 text-white p-6 flex flex-col gap-2 shadow-sm"
         >
           <Upload size={28} />
@@ -174,7 +174,7 @@ export default function Home() {
         </Link>
 
         <Link
-          to="/data-requests"
+          to="/company/data-requests"
           className="rounded-xl bg-orange-500 hover:bg-orange-600 text-white p-6 flex flex-col gap-2 shadow-sm"
         >
           <FileQuestion size={28} />
@@ -183,7 +183,7 @@ export default function Home() {
         </Link>
 
         <Link
-          to="/talk-with-team"
+          to="/company/talk-with-team"
           className="rounded-xl bg-blue-600 hover:bg-blue-700 text-white p-6 flex flex-col gap-2 shadow-sm"
         >
           <MessageSquare size={28} />

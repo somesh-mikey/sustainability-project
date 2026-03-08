@@ -8,6 +8,8 @@ export default function Reports() {
   const { token, user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [reports, setReports] = useState([]);
+  const [generatingFinal, setGeneratingFinal] = useState(false);
+  const [message, setMessage] = useState({ type: "", text: "" });
 
   const [filters, setFilters] = useState({
     project_id: "",
@@ -51,6 +53,7 @@ export default function Reports() {
     });
 
     if (!response.ok) {
+      setMessage({ type: "error", text: `Failed to generate ${type.toUpperCase()} report.` });
       return;
     }
 
@@ -68,6 +71,50 @@ export default function Reports() {
     if (refreshed.ok && refreshedData.success) {
       setReports(refreshedData.data);
     }
+
+    setMessage({ type: "success", text: `${type.toUpperCase()} report generated successfully.` });
+  };
+
+  const generateFinalReport = async () => {
+    setGeneratingFinal(true);
+    setMessage({ type: "", text: "" });
+
+    try {
+      const response = await fetch(`${API_URL}/reports/pdf`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(filters)
+      });
+
+      if (!response.ok) {
+        setMessage({ type: "error", text: "Failed to generate final report." });
+        return;
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "final-report.pdf";
+      link.click();
+
+      const refreshed = await fetch(`${API_URL}/reports`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const refreshedData = await refreshed.json();
+      if (refreshed.ok && refreshedData.success) {
+        setReports(refreshedData.data);
+      }
+
+      setMessage({ type: "success", text: "Final report generated and downloaded." });
+    } catch {
+      setMessage({ type: "error", text: "Failed to generate final report." });
+    } finally {
+      setGeneratingFinal(false);
+    }
   };
 
   if (loading) {
@@ -81,9 +128,28 @@ export default function Reports() {
         <p className="text-zinc-400">Request and download sustainability reports.</p>
       </div>
 
+      {message.text && (
+        <div
+          className={`rounded-lg border p-3 text-sm ${
+            message.type === "success"
+              ? "bg-green-900/30 border-green-700 text-green-300"
+              : "bg-red-900/30 border-red-700 text-red-300"
+          }`}
+        >
+          {message.text}
+        </div>
+      )}
+
       {(user?.role === "admin" || user?.role === "manager") && (
         <section className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 space-y-3">
           <h3 className="text-lg font-medium">Generate Report</h3>
+          <button
+            onClick={generateFinalReport}
+            disabled={generatingFinal}
+            className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 px-4 py-2 rounded font-medium"
+          >
+            {generatingFinal ? "Generating Final Report..." : "Generate Final Report"}
+          </button>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
             <input
               className="bg-zinc-800 border border-zinc-700 rounded px-3 py-2"

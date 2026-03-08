@@ -11,7 +11,10 @@ export async function login(req, res) {
   }
 
   const user = await db.oneOrNone(
-    `SELECT * FROM users WHERE email = $1 AND is_active = true`,
+    `SELECT u.*, o.name AS organization_name
+     FROM users u
+     LEFT JOIN organizations o ON o.id = u.organization_id
+     WHERE u.email = $1 AND u.is_active = true`,
     [email]
   );
 
@@ -37,6 +40,7 @@ export async function login(req, res) {
         id: user.id,
         name: user.name,
         role: user.role,
+        organization_name: user.organization_name,
       },
     },
   });

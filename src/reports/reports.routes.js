@@ -4,13 +4,17 @@ import {
   getReports,
   downloadReport,
   generateCSVReport,
-  generatePDFReport
+  generatePDFReport,
+  requestReport,
 } from "./reports.controller.js";
 
 const router = express.Router();
 
 router.get("/", requireAuth, getReports);
 router.get("/:id/download", requireAuth, downloadReport);
+
+// Client report request (any role)
+router.post("/", requireAuth, requestReport);
 
 router.post(
   "/csv",

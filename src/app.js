@@ -15,6 +15,7 @@ import dataRequestsRoutes from "./dataRequests/dataRequests.routes.js";
 import messagesRoutes from "./messages/messages.routes.js";
 import templatesRoutes from "./templates/templates.routes.js";
 import profileRoutes from "./profile/profile.routes.js";
+import notificationsRoutes from "./notifications/notifications.routes.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 
 dotenv.config();
@@ -59,6 +60,7 @@ app.use("/data-requests", dataRequestsRoutes);
 app.use("/messages", messagesRoutes);
 app.use("/templates", templatesRoutes);
 app.use("/profile", profileRoutes);
+app.use("/notifications", notificationsRoutes);
 
 // Serve index.html for client-side routing (must be after all API routes)
 app.use((req, res, next) => {
@@ -66,7 +68,7 @@ app.use((req, res, next) => {
   const apiPaths = [
     "/auth", "/dashboard", "/data-", "/emissions", "/projects",
     "/reports", "/upload", "/integrations", "/messages",
-    "/templates", "/profile", "/recalculate"
+    "/templates", "/profile", "/recalculate", "/notifications"
   ];
   
   // If path starts with any API prefix, let Express handle the 404

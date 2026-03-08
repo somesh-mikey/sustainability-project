@@ -17,13 +17,26 @@ export default function TalkWithTeam() {
   const { token, user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [messages, setMessages] = useState([]);
+  const [organizations, setOrganizations] = useState([]);
+  const [recipientOrganizationId, setRecipientOrganizationId] = useState("");
   const [category, setCategory] = useState("General Discussion");
   const [content, setContent] = useState("");
 
-  const filtered = useMemo(
-    () => messages.filter((message) => message.category === category),
-    [messages, category]
-  );
+  const filtered = useMemo(() => {
+    return messages.filter((message) => {
+      if (message.category !== category) return false;
+
+      if (!recipientOrganizationId) return true;
+
+      const senderOrgId = Number(message.sender_organization_id);
+      const recipientOrgId = Number(message.recipient_organization_id);
+      const selectedOrgId = Number(recipientOrganizationId);
+
+      const mine = message.sender_name === user?.name;
+      const partnerOrgId = mine ? recipientOrgId : senderOrgId;
+      return partnerOrgId === selectedOrgId;
+    });
+  }, [messages, category, recipientOrganizationId, user?.name]);
 
   useEffect(() => {
     async function loadMessages() {
@@ -47,10 +60,38 @@ export default function TalkWithTeam() {
     loadMessages();
   }, [token]);
 
+  useEffect(() => {
+    async function loadOrganizations() {
+      if (user?.role !== "admin" && user?.role !== "manager") {
+        return;
+      }
+
+      const response = await fetch(`${API_URL}/messages/organizations`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      const data = await response.json();
+      if (response.ok && data.success) {
+        setOrganizations(data.data);
+        if (data.data.length > 0) {
+          setRecipientOrganizationId(String(data.data[0].id));
+        }
+      }
+    }
+
+    loadOrganizations();
+  }, [token, user?.role]);
+
   const sendMessage = async () => {
     if (!content.trim()) {
       return;
     }
+
+    const sendPayload = {
+      category,
+      content: content.trim(),
+      ...(recipientOrganizationId ? { recipient_organization_id: Number(recipientOrganizationId) } : {})
+    };
 
     const response = await fetch(`${API_URL}/messages`, {
       method: "POST",
@@ -58,7 +99,7 @@ export default function TalkWithTeam() {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`
       },
-      body: JSON.stringify({ category, content: content.trim() })
+      body: JSON.stringify(sendPayload)
     });
 
     const data = await response.json();
@@ -85,6 +126,21 @@ export default function TalkWithTeam() {
         <h2 className="text-2xl font-semibold">Talk With Your Team</h2>
         <p className="text-zinc-400">Human, supportive communication with your sustainability experts.</p>
       </div>
+
+      {(user?.role === "admin" || user?.role === "manager") && organizations.length > 0 && (
+        <div className="max-w-sm">
+          <label className="text-sm text-zinc-400 block mb-1">Recipient Company</label>
+          <select
+            value={recipientOrganizationId}
+            onChange={(event) => setRecipientOrganizationId(event.target.value)}
+            className="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2"
+          >
+            {organizations.map((org) => (
+              <option key={org.id} value={String(org.id)}>{org.name}</option>
+            ))}
+          </select>
+        </div>
+      )}
 
       <div className="flex flex-wrap gap-2">
         {categories.map((entry) => (

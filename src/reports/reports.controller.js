@@ -113,6 +113,29 @@ export async function downloadReport(req, res) {
 }
 
 /**
+ * POST /reports
+ * Client-facing: request a report (saved as pending)
+ */
+export async function requestReport(req, res) {
+  const orgId = req.user.organization_id;
+  const userId = req.user.user_id;
+  const { report_type, description } = req.body;
+
+  if (!report_type) {
+    throw new AppError("report_type is required", 400, "VALIDATION_ERROR");
+  }
+
+  const result = await db.query(
+    `INSERT INTO reports (organization_id, type, filters, file_path, generated_by, report_type, description, status)
+     VALUES ($1, $2, '{}', '', $3, $4, $5, 'pending')
+     RETURNING id, report_type, description, status, created_at`,
+    [orgId, report_type, userId, report_type, description || ""]
+  );
+
+  res.status(201).json({ success: true, data: result.rows[0] });
+}
+
+/**
  * POST /reports/csv
  */
 export async function generateCSVReport(req, res) {

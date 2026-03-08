@@ -2,15 +2,15 @@ import { NavLink } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 
 const navItems = [
-  { label: "Home", path: "/dashboard" },
-  { label: "Data Submission", path: "/data-submission", roles: ["admin", "manager"] },
-  { label: "API Integrations", path: "/api-integrations" },
-  { label: "Data Requests", path: "/data-requests" },
-  { label: "Dashboards", path: "/dashboards" },
-  { label: "Reports", path: "/reports" },
-  { label: "Talk With Your Team", path: "/talk-with-team" },
-  { label: "Templates", path: "/templates" },
-  { label: "Profile & Settings", path: "/profile" }
+  { label: "Home", path: "/company/dashboard" },
+  { label: "Data Submission", path: "/company/data-submission", roles: ["admin", "manager"] },
+  { label: "API Integrations", path: "/company/api-integrations" },
+  { label: "Data Requests", path: "/company/data-requests" },
+  { label: "Analytics", path: "/company/analytics" },
+  { label: "Reports", path: "/company/reports" },
+  { label: "Talk With Your Team", path: "/company/talk-with-team" },
+  { label: "Templates", path: "/company/templates" },
+  { label: "Profile & Settings", path: "/company/profile" }
 ];
 
 export default function Sidebar() {

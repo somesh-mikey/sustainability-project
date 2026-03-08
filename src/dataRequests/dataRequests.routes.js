@@ -1,6 +1,8 @@
 import express from "express";
-import { requireAuth } from "../auth/auth.middleware.js";
+import { requireAuth, requireRole } from "../auth/auth.middleware.js";
 import {
+  createDataRequest,
+  getDataRequestOrganizations,
   getDataRequests,
   updateDataRequestStatus
 } from "./dataRequests.controller.js";
@@ -8,6 +10,8 @@ import {
 const router = express.Router();
 
 router.get("/", requireAuth, getDataRequests);
+router.get("/organizations", requireAuth, requireRole("admin", "manager"), getDataRequestOrganizations);
+router.post("/", requireAuth, requireRole("admin", "manager"), createDataRequest);
 router.patch("/:id/status", requireAuth, updateDataRequestStatus);
 
 export default router;

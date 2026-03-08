@@ -4,7 +4,8 @@ import {
   getDashboardSummary,
   getScopeBreakdown,
   getMonthlyTrends,
-  getDashboardOverview
+  getDashboardOverview,
+  getCategoryBreakdown
 } from "./dashboard.controller.js";
 
 const router = express.Router();
@@ -13,5 +14,6 @@ router.get("/summary", requireAuth, getDashboardSummary);
 router.get("/scope-breakdown", requireAuth, getScopeBreakdown);
 router.get("/trends", requireAuth, getMonthlyTrends);
 router.get("/overview", requireAuth, getDashboardOverview);
+router.get("/category-breakdown", requireAuth, getCategoryBreakdown);
 
 export default router;

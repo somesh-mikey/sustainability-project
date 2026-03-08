@@ -93,6 +93,33 @@ export async function getMonthlyTrends(req, res) {
 }
 
 /**
+ * GET /dashboard/category-breakdown
+ * Breakdown by activity_type / category
+ */
+export async function getCategoryBreakdown(req, res) {
+  const orgId = req.user.organization_id;
+
+  const result = await db.query(
+    `
+    SELECT
+      r.activity_type AS category,
+      SUM(c.calculated_value) AS total
+    FROM calculated_emissions c
+    JOIN raw_emission_data r ON r.id = c.raw_emission_id
+    WHERE c.organization_id = $1
+    GROUP BY r.activity_type
+    ORDER BY total DESC
+    `,
+    [orgId]
+  );
+
+  res.json({
+    success: true,
+    data: result.rows
+  });
+}
+
+/**
  * GET /dashboard/overview
  * Home overview cards + pending actions
  */
