@@ -7,7 +7,7 @@
     "start": "node src/server.js",
     "dev": "node src/server.js",
     "seed": "node src/seed/seedAdmin.js",
-    "migrate": "node -e \"import dotenv from 'dotenv'; dotenv.config(); import fs from 'fs'; import pkg from 'pg'; const {Pool}=pkg; const pool=process.env.DATABASE_URL ? new Pool({connectionString:process.env.DATABASE_URL,ssl:{rejectUnauthorized:false}}) : new Pool({user:process.env.DB_USER||'postgres',host:process.env.DB_HOST||'localhost',database:process.env.DB_NAME||'sustainability_db',password:process.env.DB_PASSWORD,port:Number(process.env.DB_PORT)||5432}); await pool.query(fs.readFileSync('migrations/20260222_add_prd_screen_tables.sql','utf8')); console.log('Migration done'); await pool.end();\"",
+    "migrate": "node src/seed/runMigration.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

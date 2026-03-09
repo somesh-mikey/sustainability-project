@@ -25,4 +25,5 @@ export default {
     const res = await pool.query(text, params);
     return res.rows[0] || null;
   },
+  end: () => pool.end(),
 };

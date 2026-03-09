@@ -12,8 +12,8 @@ services:
     name: sustainability-app
     runtime: node
     plan: free
-    buildCommand: npm install && cd frontend && npm install && npm run build && cd .. && npm run migrate && npm run seed
-    startCommand: npm start
+    buildCommand: npm install && cd frontend && npm install && npm run build && cd ..
+    startCommand: npm run migrate && npm run seed && npm start
     envVars:
       - key: NODE_ENV
         value: production
@@ -24,5 +24,6 @@ services:
       - key: JWT_SECRET
         generateValue: true
       - key: PORT
-        value: 3000
+        value: 10000
     healthCheckPath: /auth/login
+    staticPublishPath: ./frontend/dist
