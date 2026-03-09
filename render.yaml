@@ -26,4 +26,3 @@ services:
       - key: PORT
         value: 10000
     healthCheckPath: /auth/login
-    staticPublishPath: ./frontend/dist
