@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { useAuth } from "../../auth/AuthContext";
 import { Send, Search, MessageCircle } from "lucide-react";
 
@@ -14,11 +14,7 @@ export default function ClientMessages() {
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef(null);
 
-  useEffect(() => {
-    fetchMessages();
-  }, [token]);
-
-  async function fetchMessages() {
+  const fetchMessages = useCallback(async () => {
     try {
       const res = await fetch(`${API_URL}/messages`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -26,16 +22,23 @@ export default function ClientMessages() {
       const data = await res.json();
       if (res.ok && data.success) {
         setMessages(data.data);
-        if (data.data.length > 0 && !selectedThread) {
-          setSelectedThread("general");
-        }
+        setSelectedThread((previousThread) => {
+          if (data.data.length > 0 && !previousThread) {
+            return "general";
+          }
+          return previousThread;
+        });
       }
     } catch (err) {
       console.error("Messages fetch error:", err);
     } finally {
       setLoading(false);
     }
-  }
+  }, [token]);
+
+  useEffect(() => {
+    fetchMessages();
+  }, [fetchMessages]);
 
   async function handleSend(e) {
     e.preventDefault();

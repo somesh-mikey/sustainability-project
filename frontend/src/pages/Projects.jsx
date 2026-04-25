@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../auth/AuthContext";
 import LoadingState from "../components/LoadingState";
 import EmptyState from "../components/EmptyState";
@@ -14,7 +14,7 @@ export default function Projects() {
   const [location, setLocation] = useState("");
   const [saving, setSaving] = useState(false);
 
-  async function fetchProjects() {
+  const fetchProjects = useCallback(async () => {
     try {
       const res = await fetch(`${API_URL}/projects`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -26,11 +26,11 @@ export default function Projects() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [token]);
 
   useEffect(() => {
     fetchProjects();
-  }, [token]);
+  }, [fetchProjects]);
 
   async function handleCreate(e) {
     e.preventDefault();

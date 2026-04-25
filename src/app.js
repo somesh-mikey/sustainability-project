@@ -43,6 +43,14 @@ app.use((req, res, next) => {
   next();
 });
 
+// Lightweight health endpoint for uptime probes
+app.get("/health", (_req, res) => {
+  res.status(200).json({
+    success: true,
+    status: "ok"
+  });
+});
+
 // Serve frontend static files (in production)
 const frontendDist = path.join(__dirname, "../frontend/dist");
 app.use(express.static(frontendDist));

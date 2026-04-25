@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "../auth/AuthContext";
 import LoadingState from "../components/LoadingState";
 
@@ -33,7 +33,7 @@ export default function DataRequests() {
     return () => clearTimeout(timeout);
   }, [toast]);
 
-  async function loadRequests() {
+  const loadRequests = useCallback(async () => {
     setLoading(true);
 
     const url = statusFilter === "all"
@@ -53,11 +53,11 @@ export default function DataRequests() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [statusFilter, token]);
 
   useEffect(() => {
     loadRequests();
-  }, [statusFilter, token]);
+  }, [loadRequests]);
 
   useEffect(() => {
     async function loadOrganizations() {

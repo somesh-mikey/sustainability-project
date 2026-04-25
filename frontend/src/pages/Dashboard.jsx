@@ -21,7 +21,6 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [summary, setSummary] = useState(null);
   const [overview, setOverview] = useState(null);
-  const [scopeBreakdown, setScopeBreakdown] = useState([]);
   const [categoryBreakdown, setCategoryBreakdown] = useState([]);
 
   useEffect(() => {
@@ -29,23 +28,20 @@ export default function Dashboard() {
       const headers = { Authorization: `Bearer ${token}` };
 
       try {
-        const [summaryRes, overviewRes, scopeRes, catRes] = await Promise.all([
+        const [summaryRes, overviewRes, catRes] = await Promise.all([
           fetch(`${API_URL}/dashboard/summary`, { headers }),
           fetch(`${API_URL}/dashboard/overview`, { headers }),
-          fetch(`${API_URL}/dashboard/scope-breakdown`, { headers }),
           fetch(`${API_URL}/dashboard/category-breakdown`, { headers })
         ]);
 
-        const [summaryData, overviewData, scopeData, catData] = await Promise.all([
+        const [summaryData, overviewData, catData] = await Promise.all([
           summaryRes.json(),
           overviewRes.json(),
-          scopeRes.json(),
           catRes.json()
         ]);
 
         if (summaryRes.ok && summaryData.success) setSummary(summaryData.data);
         if (overviewRes.ok && overviewData.success) setOverview(overviewData.data);
-        if (scopeRes.ok && scopeData.success) setScopeBreakdown(scopeData.data);
         if (catRes.ok && catData.success) setCategoryBreakdown(catData.data);
       } catch {
         // silently fail — sections will show zero state

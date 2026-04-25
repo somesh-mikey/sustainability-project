@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../../auth/AuthContext";
 import { FileText, Clock, CheckCircle, AlertCircle } from "lucide-react";
 
@@ -22,11 +22,7 @@ export default function ClientReports() {
   const [successMsg, setSuccessMsg] = useState("");
   const [form, setForm] = useState({ report_type: "", description: "" });
 
-  useEffect(() => {
-    fetchReports();
-  }, [token]);
-
-  async function fetchReports() {
+  const fetchReports = useCallback(async () => {
     try {
       const res = await fetch(`${API_URL}/reports`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -38,7 +34,11 @@ export default function ClientReports() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [token]);
+
+  useEffect(() => {
+    fetchReports();
+  }, [fetchReports]);
 
   async function handleSubmit(e) {
     e.preventDefault();

@@ -6,7 +6,7 @@ import { AlertCircle, CheckCircle, Clock, MessageSquare, Upload, Eye, FileText }
 const API_URL = import.meta.env.VITE_API_BASE_URL || "";
 
 export default function ClientDashboard() {
-  const { token, user } = useAuth();
+  const { token } = useAuth();
   const [stats, setStats] = useState({ pendingRequests: 0, uploadCompletion: 0, lastUpload: null, newMessages: 0 });
   const [urgentRequests, setUrgentRequests] = useState([]);
   const [recentMessages, setRecentMessages] = useState([]);

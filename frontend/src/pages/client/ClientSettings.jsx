@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../../auth/AuthContext";
 import { Building2, Users, Bell, Plug, Shield, Save, Plus } from "lucide-react";
 
@@ -36,11 +36,7 @@ export default function ClientSettings() {
     current: "", newPassword: "", confirm: "",
   });
 
-  useEffect(() => {
-    fetchProfile();
-  }, [token]);
-
-  async function fetchProfile() {
+  const fetchProfile = useCallback(async () => {
     try {
       const res = await fetch(`${API_URL}/profile`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -61,7 +57,11 @@ export default function ClientSettings() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [token]);
+
+  useEffect(() => {
+    fetchProfile();
+  }, [fetchProfile]);
 
   async function saveCompany(e) {
     e.preventDefault();

@@ -25,4 +25,4 @@ services:
         generateValue: true
       - key: PORT
         value: 10000
-    healthCheckPath: /auth/login
+    healthCheckPath: /health
