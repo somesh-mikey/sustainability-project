@@ -5,7 +5,7 @@ import LoadingState from "../components/LoadingState";
 import EmptyState from "../components/EmptyState";
 import { useAuth } from "../auth/AuthContext";
 
-const API_URL = import.meta.env.VITE_API_BASE_URL || "";
+const API_URL = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/+$/, "");
 
 function ProgressBar({ value, max, color = "bg-blue-500" }) {
   const pct = max > 0 ? Math.min((value / max) * 100, 100) : 0;

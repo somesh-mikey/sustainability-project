@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "../auth/AuthContext";
 
-const API_URL = import.meta.env.VITE_API_BASE_URL || "";
+const API_URL = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/+$/, "");
 
 const scopes = ["scope_1", "scope_2", "scope_3"];
 

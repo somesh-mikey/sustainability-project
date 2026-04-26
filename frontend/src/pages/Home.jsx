@@ -13,7 +13,7 @@ import LoadingState from "../components/LoadingState";
 import EmptyState from "../components/EmptyState";
 import { useAuth } from "../auth/AuthContext";
 
-const API_URL = import.meta.env.VITE_API_BASE_URL || "";
+const API_URL = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/+$/, "");
 
 export default function Home() {
   const { token, user } = useAuth();

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../../auth/AuthContext";
 import { Bell, MessageSquare, FileText, CheckCircle, Check } from "lucide-react";
 
-const API_URL = import.meta.env.VITE_API_BASE_URL || "";
+const API_URL = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/+$/, "");
 
 export default function ClientNotifications() {
   const { token } = useAuth();

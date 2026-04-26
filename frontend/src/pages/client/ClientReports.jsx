@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../../auth/AuthContext";
 import { FileText, Clock, CheckCircle, AlertCircle } from "lucide-react";
 
-const API_URL = import.meta.env.VITE_API_BASE_URL || "";
+const API_URL = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/+$/, "");
 
 const REPORT_TYPES = [
   { value: "carbon_footprint", label: "Carbon Footprint Report" },

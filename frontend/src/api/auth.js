@@ -1,5 +1,5 @@
 // Use VITE_API_BASE_URL if set (for local dev), otherwise use current origin (for production)
-const API_URL = import.meta.env.VITE_API_BASE_URL || "";
+const API_URL = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/+$/, "");
 
 export async function loginUser(email, password) {
   const res = await fetch(`${API_URL}/auth/login`, {

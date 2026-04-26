@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../../auth/AuthContext";
 import { Zap, Droplets, Fuel, Trash2, TrendingUp, TrendingDown, Info } from "lucide-react";
 
-const API_URL = import.meta.env.VITE_API_BASE_URL || "";
+const API_URL = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/+$/, "");
 
 export default function ClientAnalytics() {
   const { token } = useAuth();

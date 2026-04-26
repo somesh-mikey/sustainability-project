@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../../auth/AuthContext";
 import { Building2, Users, Bell, Plug, Shield, Save, Plus } from "lucide-react";
 
-const API_URL = import.meta.env.VITE_API_BASE_URL || "";
+const API_URL = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/+$/, "");
 
 const TABS = [
   { id: "company", label: "Company Information", icon: <Building2 size={16} /> },
